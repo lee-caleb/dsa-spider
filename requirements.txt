@@ -1,0 +1,4 @@
+requests  #
+jieba  #
+selenium
+feedparser
