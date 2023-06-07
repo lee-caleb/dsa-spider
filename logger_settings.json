@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "formatters": {
+    "detailed": {
+      "class": "logging.Formatter",
+      "format": "%(asctime)s %(name)s %(levelname)s - %(message)s"
+    }
+  },
+  "handlers": {
+    "console": {
+      "class": "logging.StreamHandler",
+      "level": "INFO",
+      "formatter": "detailed"
+    },
+    "file_all": {
+      "class": "logging.FileHandler",
+      "level": "DEBUG",
+      "filename": "logs/all.log",
+      "mode": "w",
+      "formatter": "detailed"
+    },
+    "file_selenium": {
+      "class": "logging.FileHandler",
+      "level": "DEBUG",
+      "filename": "logs/selenium.log",
+      "mode": "w",
+      "formatter": "detailed"
+    },
+    "file_dsa_spider": {
+      "class": "logging.FileHandler",
+      "level": "DEBUG",
+      "filename": "logs/dsa-spider.log",
+      "mode": "w",
+      "formatter": "detailed"
+    }
+  },
+  "loggers": {
+    "selenium": {
+      "leve": "INFO",
+      "handlers": [
+        "file_selenium"
+      ]
+    },
+    "dsa": {
+      "level": "DEBUG",
+      "handlers": [
+        "file_dsa_spider"
+      ]
+    }
+  },
+  "root": {
+    "level": "DEBUG",
+    "handlers": [
+      "console",
+      "file_all"
+    ]
+  }
+}
+

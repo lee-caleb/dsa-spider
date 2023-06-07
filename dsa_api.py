@@ -6,7 +6,7 @@ from hashlib import md5
 import requests
 from requests import Response
 
-logger = logging.getLogger('dsa-spider.dsa-client')
+logger = logging.getLogger('dsa.spider.dsa-client')
 __all__ = ['DSAClient']
 
 
@@ -25,8 +25,8 @@ class DSAClient(requests.Session):
 
     def request(self, method, url, *args, **kwargs):
         url = self.base_url + url
-        logger.debug('更新URL, %s', url)
-        super().request(method, url, *args, **kwargs)
+        logger.debug('Join a New URL, %s', url)
+        return super().request(method, url, *args, **kwargs)
 
     def active_config(self, retry=0, force_config=None):
         """活跃的配置"""
@@ -51,14 +51,22 @@ class DSAClient(requests.Session):
                 raise
 
     def heartbeat(self):
-        param = {'name': self.Cache.ACTIVE_CONFIG['id']}
+        param = {'config_id': self.Cache.ACTIVE_CONFIG['id']}
         logger.info('send a heartbeat to server.')
-        return self.get('/apis/config/heartbeat', params=param).json()
+        _resp = self.get('/apis/config/heartbeat', params=param)
+        if _resp.status_code ==200 and _resp.json()['status'] == 200:
+            return True
+        return
 
     def page_create(self, body: dict):
         body['page_id'] = md5(f'{body["source"]}{body["title"]}{body["link"]}'.encode()).hexdigest()
         logger.info('Create a Page to Server, %s, %s', body['page_id'], body['title'])
-        return self.post(f'/apis/page/{body["page_id"]}/', json=body)
+        _resp = self.post(f'/apis/page/{body["page_id"]}/', json=body)
+        if _resp.status_code == 200 and _resp.json()['status'] == 200:
+            logger.info('Page [%s] is created at Server. ID: %s', body["title"], body['page_id'])
+            return body['page_id']
+        logger.warning(f'create page [%s] is Error, %s', body["title"], _resp.json()['message'])
+        return None
 
     def page_update(self, body: dict):
         if not body.get('page_id'):
@@ -78,7 +86,7 @@ class DSAClient(requests.Session):
         page_id, link
         """
         config_id = self.Cache.ACTIVE_CONFIG['id']
-        _resp = self.get('/apis/pages/no_text', params=dict(config_id=config_id))
+        _resp = self.get('/apis/pages/no_text/', params=dict(config_id=config_id))
 
         if _resp.status_code == 200 and _resp.json()['status'] == 200:
             return _resp.json()['data']

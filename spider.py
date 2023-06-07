@@ -8,7 +8,7 @@ import feedparser
 from chrome import chrome
 from settings import dsa_client
 
-logger = logging.getLogger('dsa.spider')
+logger = logging.getLogger('dsa.spider.runner')
 
 
 def secure_filename(s: str) -> str:
@@ -33,9 +33,10 @@ def has_chinese(s: str, threshold=1) -> bool:
 class Finds:
 
     def __init__(self, config):
+        self.config = config
         self.news = config['link']
-        self.selector_page_list = config.get('page_list')
-        self.selector_page_text = config.get('page_text')
+        self.selector_page_list = config.get('selector_list')
+        self.selector_page_text = config.get('selector_page')
         self.browser = chrome()
 
     def titles(self) -> list:
@@ -46,6 +47,9 @@ class Finds:
         return [(ele.text, ele.get_attribute('href')) for ele in elements]
 
     def get_text(self, url):
+        if not self.selector_page_text:
+            logger.warning(f'{self.config.get("name")} 没有配置 selector_text 属性跳过 ...')
+            return
         self.browser.get(url)
         self.browser.implicitly_wait(10)
         # lens = open(f'cache/{secure_filename(title)}.png', 'wb').write(
@@ -86,17 +90,13 @@ def load_text(config):
     for item in dsa_client.page_no_text():
         item: dict  # page_id, link
 
-        if not config.get('page_text'):
-            logger.warning(f'{config["name"]} 没有配置 page_text 属性跳过 ...')
-            continue
-
         text = Finds(config).get_text(item['link'])
 
-        if has_chinese(item['text']):
+        if has_chinese(text):
             _k = ana.tfidf(text, 10)
         else:
             _k = []  # TODO English
-
+        logger.info('Uploading page text: %s', item['page_id'])
         dsa_client.page_update(
             {'page_id': item['page_id'],
              'keywords': _k,
