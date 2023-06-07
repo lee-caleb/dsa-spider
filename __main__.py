@@ -40,6 +40,8 @@ def main():
     """main pages"""
     config = init()
     # 爬取主页页面
+    logger.info('===== Load Text ======')
+    load_text(config)
     logger.info('===== Load List ======')
     create(config)
     logger.info('===== Load Text ======')
@@ -49,5 +51,7 @@ def main():
 if __name__ == "__main__":
     # logging.basicConfig(level=logging.DEBUG)
     dictConfig(json.loads(open('logger_settings.json', 'r', encoding='utf8').read()))
-
-    main()
+    try:
+        main()
+    except Exception as _e:
+        dsa_client.Cache.EXIT_STATUS = str(_e)

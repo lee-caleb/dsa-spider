@@ -56,7 +56,6 @@ def chrome(executable_path='chromedriver',
                     )
 
     __service = Service(executable_path=executable_path
-
                         )
 
     browser = Chrome(service=__service,

@@ -14,6 +14,7 @@ class DSAClient(requests.Session):
     class Cache:
         ACTIVE_CONFIG = None
         LOG_ID = None
+        EXIT_STATUS = 'Success.'
 
     def __init__(self, base_url='', auth=None):
         super().__init__()
@@ -41,7 +42,10 @@ class DSAClient(requests.Session):
             logger.info('Saved ACTIVE_CONFIG to Cache.')
             return self.Cache.ACTIVE_CONFIG
         else:
-            logger.warning('Get Active config Error HTTP_CODE(%d), %s', _resp.status_code, _resp.text)
+            logger.warning('Get Active config Error HTTP_CODE(%d), %s',
+                           _resp.status_code,
+                           _resp.text[:30]
+                           )
             time.sleep(3)
             if retry >= 3:
                 logger.info('Retry to get active config, times: %d', retry + 1)
@@ -116,7 +120,7 @@ class DSAClient(requests.Session):
     def at_exit(self):
         """将被注册到退出函数中的事件。"""
         logger.info('Client on Exit.')
-        self.upload_status('success')
+        self.upload_status(self.Cache.EXIT_STATUS)
 
     def upload_status(self, status):
         """上传状态"""

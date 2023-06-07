@@ -37,7 +37,7 @@ class Finds:
         self.news = config['link']
         self.selector_page_list = config.get('selector_list')
         self.selector_page_text = config.get('selector_page')
-        self.browser = chrome()
+        self.browser = chrome(incognito=True, pic=False)
 
     def titles(self) -> list:
         """获取标题列表"""
