@@ -43,7 +43,7 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - run: python __main__.py
+      - run: mkdir -p logs && python __main__.py
         env:
           DSA_HTTP: ${{ secrets.DSA_HTTP }}
           DSA_AUTH: ${{ secrets.DSA_AUTH }}
