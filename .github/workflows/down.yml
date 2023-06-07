@@ -1,6 +1,6 @@
 on:
   schedule:
-    - * 1 * * *
+    - cron: '* 1 * * *'
 
   workflow_dispatch:
 
@@ -44,6 +44,6 @@ jobs:
       - run: pip install -r requirements.txt
 
       - run: python __main__.py
-        with:
+        env:
           DSA_HTTP: ${{ secrets.DSA_HTTP }}
           DSA_AUTH: ${{ secrets.DSA_AUTH }}
