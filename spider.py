@@ -1,3 +1,4 @@
+import sys
 import time
 import logging
 
@@ -32,12 +33,15 @@ def has_chinese(s: str, threshold=1) -> bool:
 
 class Finds:
 
+    linux_config = dict(pic=False, headless=True, use_gpu=False)
+    windows_config = dict()
+
     def __init__(self, config):
         self.config = config
         self.news = config['link']
         self.selector_page_list = config.get('selector_list')
         self.selector_page_text = config.get('selector_page')
-        self.browser = chrome(incognito=True, pic=False)
+        self.browser = chrome(**(self.windows_config if sys.platform == 'win32' else self.linux_config))
 
     def titles(self) -> list:
         """获取标题列表"""

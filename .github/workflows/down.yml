@@ -14,6 +14,10 @@ on:
         default: ''
         type: string
 
+      dsa_config:
+        description: '使用配置文件强制更新文件'
+        type: string
+
       dsa_debug:
         description: 'DEBUG'
         type: string

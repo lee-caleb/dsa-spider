@@ -18,7 +18,9 @@ def chrome(executable_path='chromedriver',
            use_js: bool = True, js: bool = None,
            custom_ua: str = None, ua: str = None,
            display_pic: bool = True, pic=True,
-           display_notifications: bool = True, notification=None,
+           display_notifications: bool = True,
+           notification=None,
+           use_gpu=True,
            **kwargs
            ):
     """参数说明：
@@ -28,7 +30,7 @@ def chrome(executable_path='chromedriver',
     :param maximized: 窗口最大化
     :param notification: 通知
     :param pic: 显示图片
-    :param headless: 最小化
+    :param headless: 非图形化打开
     :param incognito: 影身
     :param executable_path: chromedriver可执行程序的位置。
     :param is_headless: 隐藏窗口
@@ -52,7 +54,9 @@ def chrome(executable_path='chromedriver',
                     js=use_js, ua=custom_ua,
                     incognito=is_incognito,
                     pic=display_pic,
-                    notifications=display_notifications, **kwargs
+                    notifications=display_notifications,
+                    use_gpu=use_gpu,
+                    **kwargs
                     )
 
     __service = Service(executable_path=executable_path
@@ -64,13 +68,15 @@ def chrome(executable_path='chromedriver',
     return browser
 
 
-def _option(headless, maximized, incognito, js, ua, pic, notifications, **kwargs):
+def _option(headless, maximized, incognito, js, ua, pic, notifications, use_gpu, **kwargs):
     option = ChromeOptions()
     # 设置
     _pre = dict()
 
     if headless is True:
         option.add_argument('--headless')  # 隐藏窗口
+    if use_gpu is False:
+        option.add_argument('--disable-gpu')  # 禁用 GPU
     if maximized is True:
         option.add_argument('--start-maximized')  # 最大化
     if incognito is True:
