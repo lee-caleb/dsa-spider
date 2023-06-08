@@ -14,7 +14,7 @@ import time
 import json
 from logging.config import dictConfig
 
-from settings import dsa_client, DSA_DEBUG
+from settings import dsa_client, DSA_DEBUG, DSA_AUTH, DSA_HTTP, DSA_CONFIG
 
 from spider import create, load_text
 
@@ -51,6 +51,7 @@ def main():
 
 if __name__ == "__main__":
     dictConfig(json.loads(open('logger_settings.json', 'r', encoding='utf8').read()))
+    logger.info(f'Load Env Settings: \n{DSA_HTTP=} \n{DSA_AUTH=} \n{DSA_CONFIG=} \n{DSA_DEBUG=}')
     try:
         main()
     except Exception as _e:

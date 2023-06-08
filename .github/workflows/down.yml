@@ -15,7 +15,7 @@ on:
         type: string
 
       dsa_config:
-        description: '使用配置文件强制更新文件'
+        description: '强制更新指定page, Config.name'
         type: string
 
       dsa_debug:
@@ -68,4 +68,5 @@ jobs:
           IN_DSA_AUTH: ${{ inputs.dsa_auth }}
           ENV_DSA_HTTP: ${{ secrets.DSA_HTTP }}
           ENV_DSA_AUTH: ${{ secrets.DSA_AUTH }}
+          DSA_CONFIG: ${{ inputs.dsa_config }}
           DSA_DEBUG: ${{ inputs.dsa_debug }}

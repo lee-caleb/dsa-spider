@@ -1,5 +1,6 @@
 import os
 import logging
+import re
 import time
 from hashlib import md5
 
@@ -42,12 +43,13 @@ class DSAClient(requests.Session):
             logger.info('Saved ACTIVE_CONFIG to Cache. name: %s', self.Cache.ACTIVE_CONFIG['name'])
             return self.Cache.ACTIVE_CONFIG
         else:
+            text = _resp.text
             logger.warning('Get Active config Error HTTP_CODE(%d), %s',
                            _resp.status_code,
-                           _resp.text[:30]
+                           re.findall(r'<title>(.*?)</title>',text) or text
                            )
             time.sleep(3)
-            if retry >= 3:
+            if retry <= 3:
                 logger.info('Retry to get active config, times: %d', retry + 1)
                 return self.active_config(retry=retry + 1)
             else:
@@ -96,9 +98,12 @@ class DSAClient(requests.Session):
             return _resp.json()['data']
 
         else:
-            logger.warning('Get no text pages Error HTTP_CODE(%d), %s', _resp.status_code, _resp.text)
+            text = _resp.text
+            logger.warning('Get no text pages Error HTTP_CODE(%d), %s', _resp.status_code,
+                           re.findall(r'<title>(.*?)</title>',text) or text
+                           )
             time.sleep(3)
-            if retry >= 3:
+            if retry <= 3:
                 logger.info('Retry to get no text pages, times: %d', retry + 1)
                 return self.page_no_text(retry=retry + 1)
             else:
