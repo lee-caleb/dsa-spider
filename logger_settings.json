@@ -9,7 +9,7 @@
   "handlers": {
     "console": {
       "class": "logging.StreamHandler",
-      "level": "INFO",
+      "level": "DEBUG",
       "formatter": "detailed"
     },
     "file_all": {
