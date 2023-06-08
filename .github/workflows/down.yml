@@ -3,6 +3,21 @@ on:
     - cron: '* 1 * * *'
 
   workflow_dispatch:
+    inputs:
+      dsa_http:
+        default: ''
+        description: 'DSA Con Server HTTP Host'
+        type: string
+
+      dsa_auth:
+        description: 'DSA Auth '
+        default: ''
+        type: string
+
+      dsa_debug:
+        description: 'DEBUG'
+        type: string
+        default: ''
 
 
 jobs:
@@ -45,5 +60,8 @@ jobs:
 
       - run: mkdir -p logs && python __main__.py
         env:
-          DSA_HTTP: ${{ secrets.DSA_HTTP }}
-          DSA_AUTH: ${{ secrets.DSA_AUTH }}
+          IN_DSA_HTTP: ${{ inputs.dsa_http }}
+          IN_DSA_AUTH: ${{ inputs.dsa_auth }}
+          ENV_DSA_HTTP: ${{ secrets.DSA_HTTP }}
+          ENV_DSA_AUTH: ${{ secrets.DSA_AUTH }}
+          DSA_DEBUG: ${{ inputs.dsa_debug }}

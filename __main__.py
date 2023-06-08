@@ -8,12 +8,13 @@
 
 import atexit
 import logging
+import os
 import threading
 import time
 import json
 from logging.config import dictConfig
 
-from settings import dsa_client
+from settings import dsa_client, DSA_DEBUG
 
 from spider import create, load_text
 
@@ -49,9 +50,12 @@ def main():
 
 
 if __name__ == "__main__":
-    # logging.basicConfig(level=logging.DEBUG)
     dictConfig(json.loads(open('logger_settings.json', 'r', encoding='utf8').read()))
     try:
         main()
     except Exception as _e:
         dsa_client.Cache.EXIT_STATUS = str(_e)
+        logger.error('Has a Error in running, %s', _e)
+        if DSA_DEBUG:
+            raise _e
+

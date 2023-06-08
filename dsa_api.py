@@ -39,7 +39,7 @@ class DSAClient(requests.Session):
 
         if _resp.status_code == 200 and _resp.json()['status'] == 200:
             self.Cache.ACTIVE_CONFIG = _resp.json()['data']
-            logger.info('Saved ACTIVE_CONFIG to Cache.')
+            logger.info('Saved ACTIVE_CONFIG to Cache. name: %s', self.Cache.ACTIVE_CONFIG['name'])
             return self.Cache.ACTIVE_CONFIG
         else:
             logger.warning('Get Active config Error HTTP_CODE(%d), %s',
