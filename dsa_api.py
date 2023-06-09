@@ -1,4 +1,5 @@
-import os
+# coding: utf-8
+
 import logging
 import re
 import time
@@ -15,7 +16,9 @@ class DSAClient(requests.Session):
     class Cache:
         ACTIVE_CONFIG = None
         LOG_ID = None
-        EXIT_STATUS = 'Success.'
+        EXIT_STATUS = 'Success'
+        COUNT_NEW_PAGE = 0
+        COUNT_UPDATE_TEXT = 0
 
     def __init__(self, base_url='', auth=None):
         super().__init__()
@@ -36,7 +39,7 @@ class DSAClient(requests.Session):
             logger.info('DSA Active Config From Cache.')
             return self.Cache.ACTIVE_CONFIG
 
-        _resp = self.get(f'/apis/config/{force_config}/' if force_config else '/apis/config/unlocked')
+        _resp: Response = self.get(f'/apis/config/{force_config}/' if force_config else '/apis/config/unlocked')
 
         if _resp.status_code == 200 and _resp.json()['status'] == 200:
             self.Cache.ACTIVE_CONFIG = _resp.json()['data']
@@ -44,10 +47,11 @@ class DSAClient(requests.Session):
             return self.Cache.ACTIVE_CONFIG
         else:
             text = _resp.text
-            logger.warning('Get Active config Error HTTP_CODE(%d), %s',
-                           _resp.status_code,
-                           re.findall(r'<title>(.*?)</title>',text) or text
-                           )
+            logger.warning(
+                'Get Active config Error HTTP_CODE(%d), %s',
+                _resp.status_code,
+                re.findall(r'<title>(.*?)</title>', text) or text
+            )
             time.sleep(3)
             if retry <= 3:
                 logger.info('Retry to get active config, times: %d', retry + 1)
@@ -60,7 +64,7 @@ class DSAClient(requests.Session):
         param = {'config_id': self.Cache.ACTIVE_CONFIG['id']}
         logger.info('send a heartbeat to server.')
         _resp = self.get('/apis/config/heartbeat', params=param)
-        if _resp.status_code ==200 and _resp.json()['status'] == 200:
+        if _resp.status_code == 200 and _resp.json()['status'] == 200:
             return True
         return
 
@@ -70,6 +74,7 @@ class DSAClient(requests.Session):
         _resp = self.post(f'/apis/page/{body["page_id"]}/', json=body)
         if _resp.status_code == 200 and _resp.json()['status'] == 200:
             logger.info('Page [%s] is created at Server. ID: %s', body["title"], body['page_id'])
+            self.Cache.COUNT_NEW_PAGE += 1
             return body['page_id']
         logger.warning(f'create page [%s] is Error, %s', body["title"], _resp.json()['message'])
         return None
@@ -81,7 +86,13 @@ class DSAClient(requests.Session):
                            'but it may be do not at server.'
                            )
             body['page_id'] = md5(f'{body["source"]}{body["title"]}{body["link"]}'.encode()).hexdigest()
-        return self.put(f'/apis/page/{body["page_id"]}/', json=body).json()
+
+        _resp = self.put(f'/apis/page/{body["page_id"]}/', json=body)
+        if _resp.status_code == 200 and _resp.json()['status'] == 200:
+            logger.info('Page %s of text is updated at Server. Len(%s)', body["page_id"], len(body['text']))
+            self.Cache.COUNT_UPDATE_TEXT += 1
+            return _resp.json()
+        return
 
     def page_del(self, page_id):
         logger.warning('')
@@ -100,7 +111,7 @@ class DSAClient(requests.Session):
         else:
             text = _resp.text
             logger.warning('Get no text pages Error HTTP_CODE(%d), %s', _resp.status_code,
-                           re.findall(r'<title>(.*?)</title>',text) or text
+                           re.findall(r'<title>(.*?)</title>', text) or text
                            )
             time.sleep(3)
             if retry <= 3:

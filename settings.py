@@ -4,7 +4,7 @@ import sys
 from dsa_api import DSAClient
 
 
-__all__ = ['dsa_client', 'DSA_CONFIG']
+__all__ = ['dsa_client', 'DSA_CONFIG', 'DSA_HTTP']
 
 DSA_HTTP = os.getenv('IN_DSA_HTTP') or os.getenv('ENV_DSA_HTTP') or os.getenv('DSA_HTTP') or 'http://localhost:8000'
 DSA_AUTH = os.getenv('IN_DSA_AUTH') or os.getenv('ENV_DSA_AUTH') or os.getenv('DSA_AUTH') or ''

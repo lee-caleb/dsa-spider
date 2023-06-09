@@ -8,7 +8,6 @@
 
 import atexit
 import logging
-import os
 import threading
 import time
 import json
@@ -59,4 +58,11 @@ if __name__ == "__main__":
         logger.error('Has a Error in running, %s', _e)
         if DSA_DEBUG:
             raise _e
-
+    finally:
+        logger.info(
+            'News Update: \n'
+            'Created New Page: %d\n'
+            'Update Page\'s Text: %d',
+            dsa_client.Cache.COUNT_NEW_PAGE,
+            dsa_client.Cache.COUNT_UPDATE_TEXT,
+        )
