@@ -20,6 +20,19 @@ from spider import create, load_text
 logger = logging.getLogger('dsa.spider.__main__')
 
 
+def filter_maker(level__lte, ex_names):
+    """日志过滤器"""
+    level__lte = getattr(logging, level__lte)
+
+    def _filter(record):
+        record: logging.LogRecord
+        if record.name in ex_names and record.levelno <= level__lte:
+            return False
+        return True
+
+    return _filter
+
+
 def init():
     """初始化"""
     config = dsa_client.active_config()

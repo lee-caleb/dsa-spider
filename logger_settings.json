@@ -6,11 +6,23 @@
       "format": "%(asctime)s %(name)s %(levelname)s - %(message)s"
     }
   },
+  "filters": {
+    "f_selenium_debug": {
+      "()": "__main__.filter_maker",
+      "level__lte": "DEBUG",
+      "ex_names": [
+        "selenium.webdriver.remote.remote_connection"
+      ]
+    }
+  },
   "handlers": {
     "console": {
       "class": "logging.StreamHandler",
       "level": "DEBUG",
-      "formatter": "detailed"
+      "formatter": "detailed",
+      "filters": [
+        "f_selenium_debug"
+      ]
     },
     "file_all": {
       "class": "logging.FileHandler",
