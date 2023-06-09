@@ -45,6 +45,9 @@ class DSAClient(requests.Session):
             self.Cache.ACTIVE_CONFIG = _resp.json()['data']
             logger.info('Saved ACTIVE_CONFIG to Cache. name: %s', self.Cache.ACTIVE_CONFIG['name'])
             return self.Cache.ACTIVE_CONFIG
+        elif _resp.status_code == 406 and _resp.json()['status'] == 406:
+            logger.warning('All Config in server is locked. This process will be stop.')
+            exit()
         else:
             text = _resp.text
             logger.warning(
