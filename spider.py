@@ -1,6 +1,8 @@
+import re
 import sys
 import time
 import logging
+from typing import List
 
 from selenium.webdriver.common.by import By
 import jieba.analyse as ana
@@ -34,7 +36,7 @@ def has_chinese(s: str, threshold=1) -> bool:
 class Finds:
 
     linux_config = dict(pic=False, headless=True, use_gpu=False)
-    windows_config = dict()
+    windows_config = dict(pic=False, )
 
     def __init__(self, config):
         self.config = config
@@ -43,17 +45,17 @@ class Finds:
         self.selector_page_text = config.get('selector_page')
         self.browser = chrome(**(self.windows_config if sys.platform == 'win32' else self.linux_config))
 
-    def titles(self) -> list:
+    def titles(self) -> List[dict]:
         """获取标题列表"""
         self.browser.get(self.news)
         self.browser.implicitly_wait(10)
         elements = self.browser.find_elements(By.CSS_SELECTOR, self.selector_page_list)
-        return [(ele.text, ele.get_attribute('href')) for ele in elements]
+        return [{'title': ele.text, 'link': ele.get_attribute('href')} for ele in elements]
 
-    def get_text(self, url):
+    def get_text(self, url) -> str:
         if not self.selector_page_text:
             logger.warning(f'{self.config.get("name")} 没有配置 selector_text 属性跳过 ...')
-            return
+            return ''
         self.browser.get(url)
         self.browser.implicitly_wait(10)
         # lens = open(f'cache/{secure_filename(title)}.png', 'wb').write(
@@ -65,25 +67,32 @@ class Finds:
         )
 
 
+def rss(config) -> List[dict]:
+    """RSS 配置"""
+    return [{'title': p['title'],
+             'description': p.get('description'),
+             'link': p.get('link'),
+             'page_time': p.get('pubDate')
+             } for p in feedparser.parse(config['link'])['entries']]
+
+
 def create(config):
     """"""
     if not config.get('name'):
         raise FileNotFoundError("config 中没有发现名称")
 
     if config.get('type') == 'rss':
-        titles = [(entry['title'], entry['link']) for entry in
-                  feedparser.parse(config['link'])['entries']]
+        titles = rss(config)
     else:
         titles = Finds(config).titles()
 
     try:
-        for title, link in titles:
-            dsa_client.page_create({
-                'source': config['name'],
-                'title': title,
-                'link': link,
-                'update_time': time.strftime('%Y-%m-%d %H:%M:%S %z')
-            })
+        for title in titles:
+            title['source'] = config['name']
+
+            dsa_client.page_create(
+                title
+            )
     except Exception as _e:
         logger.warning(_e)
         # TODO Next Page
@@ -101,9 +110,13 @@ def load_text(config):
         else:
             _k = []  # TODO English
         logger.info('Uploading page text: %s', item['page_id'])
-        dsa_client.page_update(
-            {'page_id': item['page_id'],
-             'keywords': _k,
-             'text': text,
-             }
-        )
+        if text != '':
+            dsa_client.page_update(
+                {'page_id': item['page_id'],
+                 'keywords': _k,
+                 'text': text,
+                 }
+            )
+        else:
+            dsa_client.Cache.NOT_FOUND_TEXT_ID.append(item['page_id'])
+            logger.error('Not Found Text in this Page.')

@@ -19,6 +19,7 @@ class DSAClient(requests.Session):
         EXIT_STATUS = 'Success'
         COUNT_NEW_PAGE = 0
         COUNT_UPDATE_TEXT = 0
+        NOT_FOUND_TEXT_ID = []
 
     def __init__(self, base_url='', auth=None):
         super().__init__()
@@ -30,13 +31,13 @@ class DSAClient(requests.Session):
 
     def request(self, method, url, *args, **kwargs):
         url = self.base_url + url
-        logger.debug('Join a New URL, %s', url)
+        logger.debug('Join a New URL,[%s] %s', method, url)
         return super().request(method, url, *args, **kwargs)
 
     def active_config(self, retry=0, force_config=None):
         """活跃的配置"""
         if self.Cache.ACTIVE_CONFIG is not None:
-            logger.info('DSA Active Config From Cache.')
+            logger.info('DSA Active Config From Cache. name: %s', self.Cache.ACTIVE_CONFIG.get('name'))
             return self.Cache.ACTIVE_CONFIG
 
         _resp: Response = self.get(f'/apis/config/{force_config}/' if force_config else '/apis/config/unlocked')
