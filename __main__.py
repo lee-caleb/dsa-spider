@@ -44,6 +44,7 @@ def init():
             dsa_client.heartbeat()
             time.sleep(120)
 
+    dsa_client.log_start()
     atexit.register(dsa_client.at_exit)  # 注册退出函数
     threading.Thread(target=heartbeats, daemon=True).start()  # 开启心跳守护线程
     return config
@@ -66,11 +67,10 @@ if __name__ == "__main__":
     logger.info(f'Load Env Settings: \n{DSA_HTTP=} \n{DSA_AUTH=} \n{DSA_CONFIG=} \n{DSA_DEBUG=}')
     try:
         main()
+        dsa_client.Cache.EXIT_STATUS = 'Success'
     except Exception as _e:
-        dsa_client.Cache.EXIT_STATUS = str(_e)
-        logger.error('Has a Error in running, %s', _e)
-        if DSA_DEBUG:
-            raise _e
+        dsa_client.Cache.EXIT_STATUS = _e
+        logger.error('Has a Error in running, %s', _e, exc_info=_e)
     finally:
         logger.info(
             'News Update: \n'
