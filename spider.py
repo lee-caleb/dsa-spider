@@ -1,6 +1,5 @@
-import re
+# coding: utf8
 import sys
-import time
 import logging
 from typing import List
 
@@ -15,6 +14,7 @@ logger = logging.getLogger('dsa.spider.runner')
 
 
 def secure_filename(s: str) -> str:
+    """返回一个转换后的安全的文件名称"""
     unsafe_chars = '/\\><:\'"!@#•$%^&*()\n|.'
     for _c in unsafe_chars:
         s = s.replace(_c, '_')
@@ -41,8 +41,8 @@ class Finds:
     def __init__(self, config):
         self.config = config
         self.news = config['link']
-        self.selector_page_list = config.get('selector_list')
-        self.selector_page_text = config.get('selector_page')
+        self.selector_page_list = config.get('selector_list', )
+        self.selector_page_text = config.get('selector_page', )
         self.browser = chrome(**(self.windows_config if sys.platform == 'win32' else self.linux_config))
 
     def titles(self) -> List[dict]:
@@ -53,6 +53,7 @@ class Finds:
         return [{'title': ele.text, 'link': ele.get_attribute('href')} for ele in elements]
 
     def get_text(self, url) -> str:
+        """从页面中检索内容，通过 config 中配置的CSS选择器。"""
         if not self.selector_page_text:
             logger.warning(f'{self.config.get("name")} 没有配置 selector_text 属性跳过 ...')
             return ''
@@ -77,7 +78,7 @@ def rss(config) -> List[dict]:
 
 
 def create(config):
-    """"""
+    """向服务器推送新的文章标题和文章链接"""
     if not config.get('name'):
         raise FileNotFoundError("config 中没有发现名称")
 
@@ -99,9 +100,9 @@ def create(config):
 
 
 def load_text(config):
-    """加载正文"""
+    """从controller中获取当前配置中没有text的配置信息，"""
     for item in dsa_client.page_no_text():
-        item: dict  # page_id, link
+        item: dict  # 拥有2个key的dict: page_id, link
 
         text = Finds(config).get_text(item['link'])
 

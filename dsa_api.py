@@ -17,6 +17,8 @@ __all__ = ['DSAClient']
 
 
 class DSAClient(requests.Session):
+    """DSA Controller API 封装"""
+
     class Cache:
         LOG_ID = None
         EXIT_STATUS = 'Success'
@@ -34,6 +36,10 @@ class DSAClient(requests.Session):
             self.headers.update({'Auth': auth})
 
     def request(self, method, url, *args, **kwargs):
+        """重写 Session.request，
+        1. 将URI拼接为完整的URL，发起调用；
+        2. 打印一些额外的日志；
+        """
         _url = self.base_url + url
         logger.debug('Join a New URL,[%s] %s', method, _url)
 
@@ -49,7 +55,8 @@ class DSAClient(requests.Session):
 
     def client_get(self, url, *args, retry=0, **kwargs
                    ) -> Union[str, dict, list, int, type(None)]:
-        """附带判定和重试的请求"""
+        """附带判定和重试的get请求，返回一个API的REST Ful API 中data内容， 否则返回None
+        """
 
         _resp = self.get(url, *args, **kwargs)
         if _resp.status_code == 200 and _resp.json()['status'] == 200:
@@ -75,18 +82,19 @@ class DSAClient(requests.Session):
     _active_config = None
 
     def active_config(self, force_config=None):
-        """活跃的配置"""
+        """从 Controller 获取到指定的配置，并缓存"""
         logger.info(f'{type(self._active_config)} - {self._active_config}')
         if self._active_config is not None and self._active_config:
             logger.info('DSA Active Config From Cache. name: %s', self._active_config.get('name'))
             return self._active_config
 
-        _resp = self.client_get(f'/apis/config/{force_config}/' if force_config else '/apis/config/unlocked')
+        # 如果指定 force_config 则获取一个指定配置，否则获取一个最不活跃的配置
+        _resp: dict = self.client_get(f'/apis/config/{force_config}/' if force_config else '/apis/config/unlocked')
 
         if isinstance(_resp, dict) and _resp.get('name') is not None:
             self._active_config = _resp
-            self.params.setdefault('source', self._active_config.get('name', ''))
-            self.params.setdefault('config_id', self._active_config.get('id', -1))
+            self.params.setdefault('source', self._active_config.get('name', ''))  # 添加请求默认参数 source
+            self.params.setdefault('config_id', self._active_config.get('id', -1))  # 添加请求默认参数 config_id
             return _resp
         else:
             logger.error('Cannot access a config from server.')
@@ -96,7 +104,7 @@ class DSAClient(requests.Session):
 
     @property
     def page_ids(self) -> set:
-        """全部的ID"""
+        """返回获取active Config 的Page ID，并缓存"""
         if isinstance(self._page_ids, set) and self._page_ids:
             return self._page_ids
 
@@ -108,7 +116,7 @@ class DSAClient(requests.Session):
 
     @property
     def page_links(self) -> set:
-        """"""
+        """返回active config 的 Page_link, 并缓存"""
         if isinstance(self._page_links, set) and self._page_links:
             return self._page_links
 
@@ -117,6 +125,7 @@ class DSAClient(requests.Session):
         return self.page_links
 
     def heartbeat(self):
+        """向Controller发送一个心跳，表明当前配置活跃"""
         param = {'config_id': self._active_config['id']}
         logger.info('send a heartbeat to server.')
         _resp = self.get('/apis/config/heartbeat', params=param)
@@ -125,14 +134,15 @@ class DSAClient(requests.Session):
         return
 
     def page_create(self, body: dict):
+        """向 Controller 创建一个新的page"""
         body['page_id'] = md5(f'{body["source"]}{body["title"]}{body["link"]}'.encode()).hexdigest()
         logger.info('Create a Page to Server, %s, %s', body['page_id'], body['title'])
 
-        if body['page_id'] in self.page_ids:
+        if body['page_id'] in self.page_ids:  # 判断page_id 是否重复
             logger.warning('duplication page_id %s, skip.', body['page_id'])
             return
 
-        if body['link'] in self.page_links:
+        if body['link'] in self.page_links:  # 判定 page_link 是否重重
             logger.warning('duplication Page Link %s, skip.', body['link'])
             return
 
@@ -145,6 +155,7 @@ class DSAClient(requests.Session):
         return None
 
     def page_update(self, body: dict):
+        """更新Page text 到 Controller"""
         if not body.get('page_id'):
             logger.warning('Cannot Find a Page in body.\n'
                            'We will Create a page_id for this body, '
@@ -160,6 +171,7 @@ class DSAClient(requests.Session):
         return
 
     def page_del(self, page_id):
+        """删除一个配置 TODO 未实现"""
         logger.warning('')
         return self.delete(f'/apis/page/{page_id}/')
 
@@ -168,23 +180,7 @@ class DSAClient(requests.Session):
         page_id, link
         """
         config_id = self._active_config['id']
-        _resp = self.get('/apis/pages/no_text/', params=dict(config_id=config_id))
-
-        if _resp.status_code == 200 and _resp.json()['status'] == 200:
-            return _resp.json()['data']
-
-        else:
-            text = _resp.text
-            logger.warning('Get no text pages Error HTTP_CODE(%d), %s', _resp.status_code,
-                           re.findall(r'<title>(.*?)</title>', text) or text
-                           )
-            time.sleep(3)
-            if retry <= 3:
-                logger.info('Retry to get no text pages, times: %d', retry + 1)
-                return self.page_no_text(retry=retry + 1)
-            else:
-                logger.error('Cannot get pages from server.')
-                raise
+        return self.client_get('/apis/pages/no_text/', params=dict(config_id=config_id)) or []
 
     def log_start(self):
         """记录日志开始"""
@@ -231,11 +227,11 @@ class DSAClient(requests.Session):
         data['id'] = self.Cache.LOG_ID
         if self.Cache.EXIT_STATUS == 'Success':
             data['status'] = 'Success'
-        elif isinstance(self.Cache.EXIT_STATUS, Exception):
+        elif isinstance(self.Cache.EXIT_STATUS, Exception):  # TODO 如果出现了异常，应该返回堆栈信息
             data['status'] = 'Error'
-            data['comments'] = str(self.Cache.EXIT_STATUS)
+            data['comments'] = str(self.Cache.EXIT_STATUS)[:510]
         else:
             data['status'] = 'Error'
-            data['comments'] = str(self.Cache.EXIT_STATUS)
+            data['comments'] = str(self.Cache.EXIT_STATUS)[:510]
         logger.info('Upload Status <<< %s', json.dumps(data, indent=2, ensure_ascii=False))
         _resp = self.put(f'/apis/log/{self.Cache.LOG_ID}', json=data)

@@ -12,6 +12,7 @@ import threading
 import time
 import json
 from logging.config import dictConfig
+from pathlib import Path
 
 from settings import dsa_client, DSA_DEBUG, DSA_AUTH, DSA_HTTP, DSA_CONFIG
 
@@ -63,6 +64,9 @@ def main():
 
 
 if __name__ == "__main__":
+    for i in Path(__file__).parent.joinpath('logs').iterdir():
+        i.unlink()
+
     dictConfig(json.loads(open('logger_settings.json', 'r', encoding='utf8').read()))
     logger.info(f'Load Env Settings: \n{DSA_HTTP=} \n{DSA_AUTH=} \n{DSA_CONFIG=} \n{DSA_DEBUG=}')
     try:
