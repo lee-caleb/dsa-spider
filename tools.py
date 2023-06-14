@@ -10,13 +10,11 @@ from spider import Finds, rss
 from settings import dsa_client
 
 CONFIG = {
-    'name': '匈牙利国家数据保护和信息自由局',
+    'name': '匈牙利国家数据保护和信息自由局 - 英语',
     'type': 'html',
     'link': 'https://www.naih.hu/news',
-    'selector_list': ' div.page_header > h2 > a',
-    'selector_page': '#content > div > div > div.col-lg-9 > div > '
-                     'div.clearfix.text-formatted.field.field--name-body.field--type-text-with-summary'
-                     '.field--label-hidden.field__item'
+    'selector_list': '#jm-maincontent > div > div.items-row > div > div > div > h2 > a',
+    'selector_page': '#jm-maincontent > div > div'
 }
 
 
@@ -42,5 +40,6 @@ def find_page(config, page_link):
 
 
 if __name__ == '__main__':
-    find_list(CONFIG)
-    # find_page(CONFIG, "https://www.dataprotection.ie/en/news-media/press-releases/Data-Protection-Commission-announces-conclusion-of-inquiry-into-Meta-Ireland")
+    link = "https://www.naih.hu/news/537-notice-of-the-publication-obligation-on-the-central-information-public-data-registry-online-platform-and-the-transparency-procedure"
+    # find_list(CONFIG)
+    find_page(CONFIG, link)

@@ -34,7 +34,6 @@ def has_chinese(s: str, threshold=1) -> bool:
 
 
 class Finds:
-
     linux_config = dict(pic=False, headless=True, use_gpu=False)
     windows_config = dict(pic=False, )
 
@@ -49,7 +48,18 @@ class Finds:
         """获取标题列表"""
         self.browser.get(self.news)
         self.browser.implicitly_wait(10)
-        elements = self.browser.find_elements(By.CSS_SELECTOR, self.selector_page_list)
+
+        # 一个适配器，这样 model.Config.selector_list 支持 str 和 list
+        if isinstance(self.selector_page_list, str):
+            page_lists = [self.selector_page_list, ]
+        else:
+            page_lists = self.selector_page_list
+
+        # 遍历 model.Config.selector_list 的全部值，并将内容整合到一起
+        elements = [ele for page_list in page_lists
+                    for ele in self.browser.find_elements(By.CSS_SELECTOR, page_list)
+                    ]
+
         return [{'title': ele.text, 'link': ele.get_attribute('href')} for ele in elements]
 
     def get_text(self, url) -> str:
@@ -59,13 +69,19 @@ class Finds:
             return ''
         self.browser.get(url)
         self.browser.implicitly_wait(10)
-        # lens = open(f'cache/{secure_filename(title)}.png', 'wb').write(
-        #     self.browser.get_screenshot_as_png())  # screenshot
-        return '\n'.join(
-            [ele.text for ele in self.browser.find_elements(
-                By.CSS_SELECTOR, self.selector_page_text)
-             ]
-        )
+
+        # 一个适配器，这样 model.Config.selector_page 支持 str 和 list 支持 str 和 list
+        if isinstance(self.selector_page_text, str):
+            page_texts = [self.selector_page_text, ]
+        else:
+            page_texts = self.selector_page_text
+
+        # 遍历 model.Config.selector_page 的全部值，并将内容整合到一起
+        elements = [ele for page_text in page_texts
+                    for ele in self.browser.find_elements(By.CSS_SELECTOR, page_text)
+                    ]
+
+        return '\n'.join(ele.text for ele in elements)
 
 
 def rss(config) -> List[dict]:
