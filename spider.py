@@ -119,4 +119,4 @@ def load_text(config):
             )
         else:
             dsa_client.Cache.NOT_FOUND_TEXT_IDS.append(item['page_id'])
-            logger.error('Not Found Text in this Page.')
+            logger.error('Not Found Text in this Page. link: %s', item['link'])

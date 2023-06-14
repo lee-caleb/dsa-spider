@@ -6,9 +6,9 @@ import time
 import zipfile
 from hashlib import md5
 from pathlib import Path
+from typing import Union
 
 import requests
-from requests import Response
 
 from common import local_time
 
@@ -18,7 +18,6 @@ __all__ = ['DSAClient']
 
 class DSAClient(requests.Session):
     class Cache:
-        ACTIVE_CONFIG = None
         LOG_ID = None
         EXIT_STATUS = 'Success'
         COUNT_NEW_PAGE = 0
@@ -30,6 +29,7 @@ class DSAClient(requests.Session):
 
         self.base_url = base_url
         self.headers.update({'User-Agent': 'dsa-spider/0.1'})
+        self.params: dict = {}
         if auth:
             self.headers.update({'Auth': auth})
 
@@ -47,38 +47,77 @@ class DSAClient(requests.Session):
             logger.debug('[%s] %s >>> %s', method, url, _resp.text)
         return _resp
 
-    def active_config(self, retry=0, force_config=None):
-        """活跃的配置"""
-        if self.Cache.ACTIVE_CONFIG is not None:
-            logger.info('DSA Active Config From Cache. name: %s', self.Cache.ACTIVE_CONFIG.get('name'))
-            return self.Cache.ACTIVE_CONFIG
+    def client_get(self, url, *args, retry=0, **kwargs
+                   ) -> Union[str, dict, list, int, type(None)]:
+        """附带判定和重试的请求"""
 
-        _resp: Response = self.get(f'/apis/config/{force_config}/' if force_config else '/apis/config/unlocked')
-
+        _resp = self.get(url, *args, **kwargs)
         if _resp.status_code == 200 and _resp.json()['status'] == 200:
-            self.Cache.ACTIVE_CONFIG = _resp.json()['data']
-            logger.info('Saved ACTIVE_CONFIG to Cache. name: %s', self.Cache.ACTIVE_CONFIG['name'])
-            return self.Cache.ACTIVE_CONFIG
+            return _resp.json().get('data', None)
         elif _resp.status_code == 406 and _resp.json()['status'] == 406:
-            logger.warning('All Config in server is locked. This process will be stop.')
-            exit()
+            return None
         else:
             text = _resp.text
             logger.warning(
-                'Get Active config Error HTTP_CODE(%d), %s',
+                'Get %s Error HTTP_CODE(%d), %s',
+                url,
                 _resp.status_code,
                 re.findall(r'<title>(.*?)</title>', text) or text
             )
             time.sleep(3)
             if retry <= 3:
                 logger.info('Retry to get active config, times: %d', retry + 1)
-                return self.active_config(retry=retry + 1)
+                return self.client_get(url, *args, retry=retry + 1, **kwargs)
             else:
-                logger.error('Cannot access a config from server.')
-                raise
+                logger.error('Cannot access a %s from server.', url)
+                return None
+
+    _active_config = None
+
+    def active_config(self, force_config=None):
+        """活跃的配置"""
+        logger.info(f'{type(self._active_config)} - {self._active_config}')
+        if self._active_config is not None and self._active_config:
+            logger.info('DSA Active Config From Cache. name: %s', self._active_config.get('name'))
+            return self._active_config
+
+        _resp = self.client_get(f'/apis/config/{force_config}/' if force_config else '/apis/config/unlocked')
+
+        if isinstance(_resp, dict) and _resp.get('name') is not None:
+            self._active_config = _resp
+            self.params.setdefault('source', self._active_config.get('name', ''))
+            self.params.setdefault('config_id', self._active_config.get('id', -1))
+            return _resp
+        else:
+            logger.error('Cannot access a config from server.')
+            raise
+
+    _page_ids = None
+
+    @property
+    def page_ids(self) -> set:
+        """全部的ID"""
+        if isinstance(self._page_ids, set) and self._page_ids:
+            return self._page_ids
+
+        _resp = self.client_get(f'/apis/pages/id')
+        self._page_ids = set(_resp or set)
+        return self.page_ids
+
+    _page_links = None
+
+    @property
+    def page_links(self) -> set:
+        """"""
+        if isinstance(self._page_links, set) and self._page_links:
+            return self._page_links
+
+        _resp = self.client_get('/apis/pages/link')
+        self._page_links = set(_resp or set)
+        return self.page_links
 
     def heartbeat(self):
-        param = {'config_id': self.Cache.ACTIVE_CONFIG['id']}
+        param = {'config_id': self._active_config['id']}
         logger.info('send a heartbeat to server.')
         _resp = self.get('/apis/config/heartbeat', params=param)
         if _resp.status_code == 200 and _resp.json()['status'] == 200:
@@ -88,6 +127,15 @@ class DSAClient(requests.Session):
     def page_create(self, body: dict):
         body['page_id'] = md5(f'{body["source"]}{body["title"]}{body["link"]}'.encode()).hexdigest()
         logger.info('Create a Page to Server, %s, %s', body['page_id'], body['title'])
+
+        if body['page_id'] in self.page_ids:
+            logger.warning('duplication page_id %s, skip.', body['page_id'])
+            return
+
+        if body['link'] in self.page_links:
+            logger.warning('duplication Page Link %s, skip.', body['link'])
+            return
+
         _resp = self.post(f'/apis/page/{body["page_id"]}/', json=body)
         if _resp.status_code == 200 and _resp.json()['status'] == 200:
             logger.info('Page [%s] is created at Server. ID: %s', body["title"], body['page_id'])
@@ -119,7 +167,7 @@ class DSAClient(requests.Session):
         """没有正文的page
         page_id, link
         """
-        config_id = self.Cache.ACTIVE_CONFIG['id']
+        config_id = self._active_config['id']
         _resp = self.get('/apis/pages/no_text/', params=dict(config_id=config_id))
 
         if _resp.status_code == 200 and _resp.json()['status'] == 200:
@@ -141,7 +189,7 @@ class DSAClient(requests.Session):
     def log_start(self):
         """记录日志开始"""
         body = {
-            'source': self.Cache.ACTIVE_CONFIG['name'],
+            'source': self._active_config['name'],
             'status': 'Running',
             'start_time': local_time()
         }
@@ -171,7 +219,7 @@ class DSAClient(requests.Session):
             end_time=local_time(),
             num_new_page=self.Cache.COUNT_NEW_PAGE,
             num_update_text=self.Cache.COUNT_UPDATE_TEXT,
-            not_found_text_page_ids=self.Cache.NOT_FOUND_TEXT_IDS,
+            not_found_text_pages=self.Cache.NOT_FOUND_TEXT_IDS,
             status=self.Cache.EXIT_STATUS,
         )
         self.upload_logs()
