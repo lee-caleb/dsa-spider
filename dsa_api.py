@@ -105,11 +105,11 @@ class DSAClient(requests.Session):
     @property
     def page_ids(self) -> set:
         """返回获取active Config 的Page ID，并缓存"""
-        if isinstance(self._page_ids, set) and self._page_ids:
+        if isinstance(self._page_ids, set):
             return self._page_ids
 
         _resp = self.client_get(f'/apis/pages/id')
-        self._page_ids = set(_resp or set)
+        self._page_ids = set(_resp or set())
         return self.page_ids
 
     _page_links = None
@@ -117,11 +117,11 @@ class DSAClient(requests.Session):
     @property
     def page_links(self) -> set:
         """返回active config 的 Page_link, 并缓存"""
-        if isinstance(self._page_links, set) and self._page_links:
+        if isinstance(self._page_links, set):
             return self._page_links
 
         _resp = self.client_get('/apis/pages/link')
-        self._page_links = set(_resp or set)
+        self._page_links = set(_resp or set())
         return self.page_links
 
     def heartbeat(self):
