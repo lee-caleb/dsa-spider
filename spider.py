@@ -1,4 +1,5 @@
 # coding: utf8
+import json
 import sys
 import logging
 from typing import List
@@ -33,6 +34,16 @@ def has_chinese(s: str, threshold=1) -> bool:
     return False
 
 
+def load_selector(selector_value: str) -> list:
+    """一个适配器，这样 model.Config.selector_list 支持 str 和 list"""
+    try:
+        return json.loads(selector_value)
+    except json.JSONDecodeError as _e:
+        if selector_value:
+            return [selector_value, ]
+        return []
+
+
 class Finds:
     linux_config = dict(pic=False, headless=True, use_gpu=False)
     windows_config = dict(pic=False, )
@@ -40,8 +51,8 @@ class Finds:
     def __init__(self, config):
         self.config = config
         self.news = config['link']
-        self.selector_page_list = config.get('selector_list', )
-        self.selector_page_text = config.get('selector_page', )
+        self.selector_page_list = load_selector(config.get('selector_list', '[]'))
+        self.selector_page_text = load_selector(config.get('selector_page', '[]'))
         self.browser = chrome(**(self.windows_config if sys.platform == 'win32' else self.linux_config))
 
     def titles(self) -> List[dict]:
@@ -49,14 +60,8 @@ class Finds:
         self.browser.get(self.news)
         self.browser.implicitly_wait(10)
 
-        # 一个适配器，这样 model.Config.selector_list 支持 str 和 list
-        if isinstance(self.selector_page_list, str):
-            page_lists = [self.selector_page_list, ]
-        else:
-            page_lists = self.selector_page_list
-
         # 遍历 model.Config.selector_list 的全部值，并将内容整合到一起
-        elements = [ele for page_list in page_lists
+        elements = [ele for page_list in self.selector_page_list
                     for ele in self.browser.find_elements(By.CSS_SELECTOR, page_list)
                     ]
 
@@ -68,16 +73,10 @@ class Finds:
             logger.warning(f'{self.config.get("name")} 没有配置 selector_text 属性跳过 ...')
             return ''
         self.browser.get(url)
-        self.browser.implicitly_wait(10)
-
-        # 一个适配器，这样 model.Config.selector_page 支持 str 和 list 支持 str 和 list
-        if isinstance(self.selector_page_text, str):
-            page_texts = [self.selector_page_text, ]
-        else:
-            page_texts = self.selector_page_text
+        self.browser.implicitly_wait(30)
 
         # 遍历 model.Config.selector_page 的全部值，并将内容整合到一起
-        elements = [ele for page_text in page_texts
+        elements = [ele for page_text in self.selector_page_text
                     for ele in self.browser.find_elements(By.CSS_SELECTOR, page_text)
                     ]
 
