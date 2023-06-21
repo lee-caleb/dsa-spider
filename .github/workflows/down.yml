@@ -64,7 +64,10 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - run: |-
+      - name: main
+        run: |-
+          set +e
+          echo Will spider all config.
           times_in_while=0
           while true;do 
             ((times_in_while++))
@@ -85,7 +88,7 @@ jobs:
               ;;
             esac
           done
-          
+
           echo 
           echo "RunTimes $times_in_while ..."
         env:
