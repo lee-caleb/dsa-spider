@@ -38,7 +38,7 @@ def load_selector(selector_value: str) -> list:
     """一个适配器，这样 model.Config.selector_list 支持 str 和 list"""
     try:
         return json.loads(selector_value)
-    except json.JSONDecodeError as _e:
+    except (json.JSONDecodeError, TypeError) as _e:
         if selector_value:
             return [selector_value, ]
         return []
@@ -51,8 +51,8 @@ class Finds:
     def __init__(self, config):
         self.config = config
         self.news = config['link']
-        self.selector_page_list = load_selector(config.get('selector_list', '[]'))
-        self.selector_page_text = load_selector(config.get('selector_page', '[]'))
+        self.selector_page_list = load_selector(config.get('selector_list') or '[]')  # selector_list可能的值是 None 和 空字符串
+        self.selector_page_text = load_selector(config.get('selector_page') or '[]')  # 同上
         self.browser = chrome(**(self.windows_config if sys.platform == 'win32' else self.linux_config))
 
     def titles(self) -> List[dict]:
