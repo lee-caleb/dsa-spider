@@ -36,7 +36,7 @@ def filter_maker(level__lte, ex_names):
 
 def init():
     """初始化"""
-    config = dsa_client.active_config()
+    config = dsa_client.active_config(force_config=DSA_CONFIG)
     if config.get('id') is None:
         raise
 

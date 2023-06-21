@@ -19,4 +19,3 @@ if len(sys.argv) >= 2:
     DSA_CONFIG = sys.argv[1]
 
 dsa_client = DSAClient(DSA_HTTP, DSA_AUTH)
-dsa_client.active_config(force_config=DSA_CONFIG)
