@@ -1,6 +1,8 @@
+name: 爬取器
+
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '9 * * * *'
 
   workflow_dispatch:
     inputs:
@@ -62,7 +64,30 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - run: mkdir -p logs && python __main__.py
+      - run: |-
+          times_in_while=0
+          while true;do 
+            ((times_in_while++))
+            rm -rf logs/
+            mkdir -p logs
+            python __main__.py
+            exit_code=$?
+            case $exit_code in 
+            0 )
+              echo ok, Next ... ;;
+            119 )
+              echo All Done . 
+              exit 0
+              ;;
+            * ) 
+              echo Find A Error in this Workers.;
+              exit 1
+              ;;
+            esac
+          done
+          
+          echo 
+          echo "RunTimes $times_in_while ..."
         env:
           IN_DSA_HTTP: ${{ inputs.dsa_http }}
           IN_DSA_AUTH: ${{ inputs.dsa_auth }}

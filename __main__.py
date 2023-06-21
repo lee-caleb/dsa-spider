@@ -15,7 +15,7 @@ from logging.config import dictConfig
 from pathlib import Path
 
 from settings import dsa_client, DSA_DEBUG, DSA_AUTH, DSA_HTTP, DSA_CONFIG
-
+from dsa_api import ActiveConfigNotFoundError
 from spider import create, load_text
 
 logger = logging.getLogger('dsa.spider.__main__')
@@ -72,9 +72,14 @@ if __name__ == "__main__":
     try:
         main()
         dsa_client.Cache.EXIT_STATUS = 'Success'
+        _exit_code = 0
+    except ActiveConfigNotFoundError:
+        _exit_code = 119
     except Exception as _e:
         dsa_client.Cache.EXIT_STATUS = _e
         logger.error('Has a Error in running, %s', _e, exc_info=_e)
+        _exit_code = 1
+        raise _e
     finally:
         logger.info(
             'News Update: \n'
@@ -83,3 +88,5 @@ if __name__ == "__main__":
             dsa_client.Cache.COUNT_NEW_PAGE,
             dsa_client.Cache.COUNT_UPDATE_TEXT,
         )
+
+    exit(_exit_code)

@@ -16,6 +16,10 @@ logger = logging.getLogger('dsa.spider.dsa-client')
 __all__ = ['DSAClient']
 
 
+class ActiveConfigNotFoundError(FileNotFoundError):
+    pass
+
+
 class DSAClient(requests.Session):
     """DSA Controller API 封装"""
 
@@ -98,7 +102,7 @@ class DSAClient(requests.Session):
             return _resp
         else:
             logger.error('Cannot access a config from server.')
-            raise
+            raise ActiveConfigNotFoundError()
 
     _page_ids = None
 
