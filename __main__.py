@@ -48,6 +48,7 @@ def init():
     dsa_client.log_start()
     atexit.register(dsa_client.at_exit)  # 注册退出函数
     threading.Thread(target=heartbeats, daemon=True).start()  # 开启心跳守护线程
+    print(config['name'], file=open('last_config_name', 'w', encoding='utf8'))
     return config
 
 

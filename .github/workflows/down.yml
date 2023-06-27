@@ -68,6 +68,7 @@ jobs:
         run: |-
           set +e
           echo Will spider all config.
+          mkdir upload_log/
           times_in_while=0
           while true;do 
             ((times_in_while++))
@@ -75,6 +76,10 @@ jobs:
             mkdir -p logs
             python __main__.py
             exit_code=$?
+
+            name=$(cat last_config_name)
+            mv logs upload_log/${name:-${times_in_while}}
+            
             case $exit_code in 
             0 )
               echo ok, Next ... ;;
@@ -98,3 +103,8 @@ jobs:
           ENV_DSA_AUTH: ${{ secrets.DSA_AUTH }}
           DSA_CONFIG: ${{ inputs.dsa_config }}
           DSA_DEBUG: ${{ inputs.dsa_debug }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: logs
+          path: upload_log/
