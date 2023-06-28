@@ -63,8 +63,11 @@ class DSAClient(requests.Session):
         """
 
         _resp = self.get(url, *args, **kwargs)
-        if _resp.status_code == 200 and _resp.json()['status'] == 200:
-            return _resp.json().get('data', None)
+
+        if _resp.status_code == 200:
+            _resp_json = _resp.json()
+            # 尴尬的是_resp_json有可能是一个列表而不是一个字典
+            return _resp_json.get('date') if isinstance(_resp_json, dict) else _resp_json
         elif _resp.status_code == 406 and _resp.json()['status'] == 406:
             return None
         else:
@@ -97,8 +100,9 @@ class DSAClient(requests.Session):
 
         if isinstance(_resp, dict) and _resp.get('name') is not None:
             self._active_config = _resp
-            self.params.setdefault('source', self._active_config.get('name', ''))  # 添加请求默认参数 source
-            self.params.setdefault('config_id', self._active_config.get('id', -1))  # 添加请求默认参数 config_id
+            if self._active_config.get('name'):
+                self.params.setdefault('source', self._active_config.get('name', ''))  # 添加请求默认参数 source
+                self.params.setdefault('config_id', self._active_config.get('id', -1))  # 添加请求默认参数 config_id
             return _resp
         else:
             logger.error('Cannot access a config from server.')
@@ -127,6 +131,13 @@ class DSAClient(requests.Session):
         _resp = self.client_get('/apis/pages/link')
         self._page_links = set(_resp or set())
         return self.page_links
+
+    def force_update_ips_from_pages(self):
+        """从Page中更新IPS links"""
+        logger.warning('正在从pages接口更新_page_ids, page_links')
+        pages = self.client_get('/apis/pages')
+        self._page_ids = {i['page_id'] for i in pages}
+        self._page_links = {i['link'] for i in pages}
 
     def heartbeat(self):
         """向Controller发送一个心跳，表明当前配置活跃"""
