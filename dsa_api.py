@@ -105,7 +105,7 @@ class DSAClient(requests.Session):
                 self.params.setdefault('config_id', self._active_config.get('id', -1))  # 添加请求默认参数 config_id
             return _resp
         else:
-            logger.error('Cannot access a config from server.')
+            logger.error('Cannot access a config from server. _resp: %s', _resp)
             raise ActiveConfigNotFoundError()
 
     _page_ids = None
