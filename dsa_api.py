@@ -67,7 +67,7 @@ class DSAClient(requests.Session):
         if _resp.status_code == 200:
             _resp_json = _resp.json()
             # 尴尬的是_resp_json有可能是一个列表而不是一个字典
-            return _resp_json.get('date') if isinstance(_resp_json, dict) else _resp_json
+            return _resp_json.get('data') if isinstance(_resp_json, dict) else _resp_json
         elif _resp.status_code == 406 and _resp.json()['status'] == 406:
             return None
         else:
