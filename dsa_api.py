@@ -13,7 +13,7 @@ import requests
 from common import local_time
 
 logger = logging.getLogger('dsa.spider.dsa-client')
-__all__ = ['DSAClient']
+__all__ = ['DSAClient', 'ActiveConfigNotFoundError']
 
 
 class ActiveConfigNotFoundError(FileNotFoundError):

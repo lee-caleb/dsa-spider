@@ -34,8 +34,10 @@ def has_chinese(s: str, threshold=1) -> bool:
     return False
 
 
-def load_selector(selector_value: str) -> list:
+def load_selector(selector_value: str) -> list[str]:
     """一个适配器，这样 model.Config.selector_list 支持 str 和 list"""
+    if isinstance(selector_value, List):
+        return selector_value
     try:
         return json.loads(selector_value)
     except (json.JSONDecodeError, TypeError) as _e:
@@ -72,6 +74,11 @@ class Finds:
         if not self.selector_page_text:
             logger.warning(f'{self.config.get("name")} 没有配置 selector_text 属性跳过 ...')
             return ''
+        for page_text in self.selector_page_text:
+            if not isinstance(page_text, str):
+                logger.warning(f'{self.config.get("name")} 的 selector_text 中的每一项必须是一个str, \n'
+                               f'但是得到 {type(page_text)}, ({page_text = }) ')
+                return ''
         self.browser.get(url)
         self.browser.implicitly_wait(30)
 
