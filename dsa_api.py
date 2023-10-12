@@ -244,9 +244,9 @@ class DSAClient(requests.Session):
             data['status'] = 'Success'
         elif isinstance(self.Cache.EXIT_STATUS, Exception):  # TODO 如果出现了异常，应该返回堆栈信息
             data['status'] = 'Error'
-            data['comments'] = str(self.Cache.EXIT_STATUS)[:510]
+            data['comments'] = str(self.Cache.EXIT_STATUS)[:125]  # FIXME 数据库字段长度 128
         else:
             data['status'] = 'Error'
-            data['comments'] = str(self.Cache.EXIT_STATUS)[:510]
+            data['comments'] = str(self.Cache.EXIT_STATUS)[:125]  # FIXME 数据库字段长度 128
         logger.info('Upload Status <<< %s', json.dumps(data, indent=2, ensure_ascii=False))
         _resp = self.put(f'/apis/log/{self.Cache.LOG_ID}', json=data)
