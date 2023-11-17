@@ -8,11 +8,14 @@ from selenium.webdriver.common.by import By
 import jieba.analyse as ana
 import feedparser
 
-from chrome import chrome
+from chrome import chrome as f_chrome
 from settings import dsa_client
 
 logger = logging.getLogger('dsa.spider.runner')
 
+linux_config = dict(pic=False, headless=True, use_gpu=False)
+windows_config = dict(pic=False, )
+CHROME = f_chrome(**(windows_config if sys.platform == 'win32' else linux_config))
 
 def secure_filename(s: str) -> str:
     """返回一个转换后的安全的文件名称"""
@@ -47,15 +50,14 @@ def load_selector(selector_value: str) -> list[str]:
 
 
 class Finds:
-    linux_config = dict(pic=False, headless=True, use_gpu=False)
-    windows_config = dict(pic=False, )
+
 
     def __init__(self, config):
         self.config = config
         self.news = config['link']
         self.selector_page_list = load_selector(config.get('selector_list') or '[]')  # selector_list可能的值是 None 和 空字符串
         self.selector_page_text = load_selector(config.get('selector_page') or '[]')  # 同上
-        self.browser = chrome(**(self.windows_config if sys.platform == 'win32' else self.linux_config))
+        self.browser = CHROME
 
     def titles(self) -> List[dict]:
         """获取标题列表"""

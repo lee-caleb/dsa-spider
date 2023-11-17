@@ -25,6 +25,7 @@ def chrome(executable_path='chromedriver',
            ):
     """参数说明：
 
+    :param use_gpu:
     :param ua:
     :param js:
     :param maximized: 窗口最大化
