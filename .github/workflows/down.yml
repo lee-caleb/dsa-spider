@@ -105,7 +105,7 @@ jobs:
           DSA_DEBUG: ${{ inputs.dsa_debug }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: logs
           path: upload_log/
