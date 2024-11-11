@@ -2,7 +2,7 @@ name: 爬取器
 
 on:
   schedule:
-    - cron: '9 * * * *'
+    - cron: '9 6 * * *'
 
   workflow_dispatch:
     inputs:
@@ -78,7 +78,7 @@ jobs:
             exit_code=$?
 
             name=$(cat last_config_name)
-            mv logs upload_log/${name:-${times_in_while}}
+            mv logs upload_log/${name:-${times_in_while}}-${times_in_while}
             
             case $exit_code in 
             0 )
